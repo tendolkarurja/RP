@@ -1,0 +1,1 @@
+This is a project aimed to make an ML model that will identify frog species and analyze their population trends to predict future biodiversity loss. It uses frog calls counts as an indication of the population.
