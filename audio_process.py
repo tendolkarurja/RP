@@ -40,7 +40,6 @@ def generate_spectrogram(y_norm, sr, species_name, occ_count, chunk_idx, rec_yea
 
     filename = f"{safe_species}_{occ_count}_{chunk_idx}_{rec_year}.png"
     png_path = os.path.join(species_folder, filename)
-
     if os.path.exists(png_path):
         print(f"Skipping {filename} (already exists)")
         return
@@ -56,7 +55,17 @@ def generate_spectrogram(y_norm, sr, species_name, occ_count, chunk_idx, rec_yea
     plt.savefig(png_path)
     plt.close()
 
+def save_audio_chunk(y_chunk, sr, species_name, occ_count, chunk_idx, rec_year):
+    safe_species = species_name.replace(" ", "_").replace("/", "_")
+    species_folder = os.path.join(output, safe_species)  
+    os.makedirs(species_folder, exist_ok=True)
 
+    filename = f"{safe_species}_{occ_count}_{chunk_idx}_{rec_year}.wav"
+    chunk_path = os.path.join(species_folder, filename)
+    if not os.path.exists(chunk_path):
+        sf.write(chunk_path, y_chunk, sr)
+    
+    
 chunk_duration = 10
 sr=16000
 chunk_size = chunk_duration * sr
@@ -76,10 +85,12 @@ for audio in audios:
         y_chunked = y[chunk : chunk + chunk_size]
         y_filtered = filter_non_frog(y_chunked, sr)
         y_trim, _ = librosa.effects.trim(y_filtered, top_db=30)
+        if len(y_trim) == 0 or np.max(np.abs(y_trim)) == 0:
+            continue
         y_norm = y_trim / np.max(np.abs(y_trim))
 
         generate_spectrogram(y_norm, sr, species_name, occ_count, idx +1, recording_year)
-
+        save_audio_chunk(y_norm, sr, species_name, occ_count, idx +1, recording_year)
         del y_chunked, y_filtered, y_trim, y_norm
         print(f'Rec {count}, chunk {idx} converted')
         gc.collect()
